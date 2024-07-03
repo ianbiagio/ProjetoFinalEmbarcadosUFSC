@@ -43,22 +43,44 @@ app.post('/LogPortao', (req, res, next) => {
             console.log('Recebimento de log portao ok');
             const id = this.lastID;
             res.status(200).send({ message: 'Recebimento de log portao', id: id });
-            // requisicao para a porta mobile com o respectivo id
         }
     });
 });
 
 app.post('/LogPortao-Mobile', (req, res, next) => {
-    const { abertura,id } = req.body;
+    const { abertura } = req.body;
 
-    db.run(`UPDATE log_portao SET abertura = ? WHERE id = ?`,
-        [abertura,id], function (err) {
+    db.get(`SELECT MAX(ID) AS maxId FROM LOG_PORTAO`, [], (err, row) => {
         if (err) {
             console.log("Error: ", err);
             res.status(500).send('Erro ao receber log portao mobile');
         } else {
-            console.log('Recebimento de log portao mobile ok');
-            res.status(200).send({ message: 'Atualização de log portao mobile', id: id });
+            const id = row.maxId;
+
+            db.run(`UPDATE log_portao SET abertura = ? WHERE id = ?`,
+                [abertura, id], function (err) {
+                if (err) {
+                    console.log("Error: ", err);
+                    res.status(500).send('Erro ao receber log portao mobile');
+                } else {
+                    console.log('Recebimento de log portao mobile ok');
+                    res.status(200).send({ message: 'Atualização de log portao mobile', id: id });
+                }
+            });
         }
     });
 });
+
+app.get('/GetLogPortao', (req, res, next)=>{
+    db.get(`SELECT * FROM log_portao`,(err, result)=>{
+        if (err){
+            console.log('Erro: ', err)
+            res.status(500).send('Erro ao obter dados')
+        } else if (result == null){
+            console.log('Log não encontrada')
+            res.status(404).send('Log não encontrada')
+        } else {
+            res.status(200).json(result)
+        }
+    })
+})
